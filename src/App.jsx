@@ -1,14 +1,34 @@
 import { useState } from 'react'
 import './style.css'
-import Logo from '@/assets/images/logo.svg?react' // import svg inline to edit pic color 
-import iconSun from '@/assets/images/icon-sun.svg'
-import iconMoon from '@/assets/images/icon-moon.svg'
-import extensionData from '@/assets/data.json'
+import Logo from './assets/images/logo.svg?react' // import svg inline to edit pic color 
+import iconSun from './assets/images/icon-sun.svg'
+import iconMoon from './assets/images/icon-moon.svg'
+import extensionData from './data.json'
+
+// Import all logo images
+const logoImages = import.meta.glob('./assets/images/logo-*.svg')
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [filter, setFilter] = useState('all'); // all, active, inactive
   const [extension, setExtensions] = useState(extensionData);
+  const [loadedImages, setLoadedImages] = useState({});
+
+  // Load images when component mounts
+  useState(() => {
+    Promise.all(
+      extension.map(async (ext) => {
+        const imagePath = `./${ext.logo}`
+        if (logoImages[imagePath]) {
+          const image = await logoImages[imagePath]()
+          setLoadedImages(prev => ({
+            ...prev,
+            [ext.logo]: image.default
+          }))
+        }
+      })
+    )
+  }, [])
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode)
@@ -75,7 +95,7 @@ function App() {
                     style={{background: isDarkMode ? '#2f364b' : '#FFFFFF'}}
                   >
                     <div className='w-full flex flex-row text-wrap'>
-                      <img src={ext.logo} alt={ext.name} className='w-10 h-12 mb-2' />
+                      <img src={loadedImages[ext.logo]} alt={ext.name} className='w-10 h-12 mb-2' />
                       <div className='flex flex-col ml-3' style={{color: isDarkMode ? '#FFFFFF' : '#000000'}}>
                         <h3 className='text-sm sm:text-md font-bold mb-2'>{ext.name}</h3>
                         <h3 className='text-xs sm:text-sm font-light'>{ext.description}</h3>
